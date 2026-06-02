@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>기말2번째 - RTB 시뮬레이터</title>
+	<script src="https://unpkg.com/lucide@latest"></script>
+	<style>
+		body,h1,h2,p{margin: 0; padding: 0;}
+		 /* 기본 스타일 초기화 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+            word-break: keep-all;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100vh;
+            background-color: #ffffff;
+            overflow-y: scroll;
+  
+            scroll-behavior: smooth;
+        }
+
+        .back-btn {
+            position: fixed;
+            top: 40px;
+            left: 40px;
+            z-index: 1000;
+            text-decoration: none;
+            display: inline-block;
+            transition: transform 0.2s ease;
+        }
+
+        .back-btn svg path {
+            fill: #a6f966; 
+            transition: fill 0.2s ease;
+        }
+
+        .back-btn:hover svg path {
+            fill: #888888; 
+        }
+        
+        .back-btn:hover {
+            transform: translateX(-4px);
+        }
+
+        .section {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 0 5vw;
+            scroll-snap-align: start;
+        }
+
+        /* [수정] 시뮬레이터 레이아웃을 안전하게 잡아줄 container 스타일 추가 */
+        .container {
+            width: 100%;
+            max-width: 1100px;
+            margin: 0 auto;
+            text-align: left; /* 내부 정렬 원상복구 */
+        }
+
+        .section-tag {
+            display: inline-block;
+            font-size: 0.9rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #0033ff;
+            margin-bottom: 8px;
+        }
+
+        .section-title {
+            font-size: clamp(1.8rem, 4vw, 2.5rem);
+            font-weight: 800;
+            margin-bottom: 12px;
+            color: #000000;
+        }
+
+        .section-desc {
+            font-size: 1rem;
+            color: #666666;
+            margin-bottom: 32px;
+            max-width: 700px;
+        }
+
+        .main-title {
+            font-size: clamp(5rem, 13vw, 11rem);
+            font-weight: 900;
+            color: #000000;
+            letter-spacing: -2px;
+        }
+
+        .sub-text-1 {
+            font-size: clamp(2rem, 5vw, 4rem);
+            font-weight: 800;
+            color: #000000;
+            line-height: 1.4;
+        }
+
+        .sub-text-2 {
+            font-size: clamp(1.1rem, 2.5vw, 1.8rem);
+            font-weight: 500;
+            color: #000000;
+            line-height: 1.8;
+        }
+
+        .rtb-intro-wrap {
+            max-width: 900px;
+            text-align: center;
+        }
+
+        .sub-title {
+            font-size: clamp(1.8rem, 4vw, 3rem);
+            font-weight: 800;
+            color: #000000;
+            margin-bottom: 30px;
+            line-height: 1.4;
+        }
+
+        .desc-text {
+            font-size: clamp(1.1rem, 2.5vw, 1.8rem);
+            font-weight: 500;
+            color: #444444; 
+            line-height: 1.7;
+        }
+
+        .highlight-blue {
+            color: #0033ff;
+            font-weight: 900;
+        }
+
+        /* ==========================================================================
+   RTB 3단계 레이아웃 스타일 (확장 및 간격 보완 버전)
+   ========================================================================== */
+.rtb-section {
+  width: 100%;
+  max-width: 1100px;        /* 시뮬레이터 콘텐츠 전체 너비와 동일하게 맞춤 */
+  margin: 0 auto 120px auto; /* [수정] 아래 시뮬레이터와의 간격을 120px로 넉넉하게 확대 */
+  padding: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  text-align: left;
+}
+
+/* 메인 타이틀 */
+.rtb-main-title {
+  font-size: 2.6rem;        /* 크기 확대 */
+  font-weight: 800;
+  color: #000000;
+  margin-bottom: 60px;
+  letter-spacing: -0.03em;
+}
+
+/* 3단 정렬 컨테이너 */
+.rtb-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 15px;
+}
+
+/* 각 단계 카드 */
+.rtb-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* 단계별 대제목 (SSP, AD Exchange, DSP) */
+.rtb-card-title {
+  font-size: 2.8rem;        /* [수정] 기존 2.4rem -> 2.8rem으로 대폭 확대 */
+  font-weight: 800;
+  color: #000000;
+  line-height: 1.1;
+  margin-bottom: 24px;
+  letter-spacing: -0.02em;
+  height: 110px;            /* 글자 크기 확대에 맞게 높이 밸런스 조정 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 설명 텍스트 */
+.rtb-card-desc {
+  font-size: 1.1rem;        /* [수정] 기존 0.9rem -> 1.1rem으로 본문 크기 확대 */
+  font-weight: 500;
+  color: #111111;
+  line-height: 1.6;
+  letter-spacing: -0.02em;
+  word-break: keep-all;
+}
+
+/* 영문 서브 텍스트 (Supply Side Platform) */
+.rtb-card-desc .sub-text {
+  display: block;
+  margin-top: 6px;
+  color: #555555;
+  font-size: 0.95rem;       /* 상위 밸런스에 맞춰 서브 텍스트 크기 조정 */
+}
+
+/* 중간 연결선 (___) */
+.rtb-line {
+  width: 60px;
+  height: 2px;
+  background-color: #000000;
+  margin-top: 55px;         /* 구조가 커진 타이틀 높이의 중앙에 맞춤 */
+  flex-shrink: 0;
+}
+
+        /* ==========================================================================
+           SIMULATOR SECTION STYLES
+           ========================================================================== */
+
+        .gradient-blue {
+          background: linear-gradient(135deg, #0033ff, #5588ff);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          display: inline-block;
+        }
+
+        .text-lime {
+          color: #a6f966;
+          text-shadow: 0 0 10px rgba(166, 249, 102, 0.2);
+        }
+
+        .sim-container {
+          display: grid;
+          grid-template-columns: 320px 1fr;
+          gap: 32px;
+          align-items: stretch;
+        }
+
+        .device-preview {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          height: 100%;
+        }
+
+        .phone-frame {
+          width: 100%;
+          max-width: 320px;
+          height: 560px;
+          border-radius: 36px;
+          border: 8px solid #222222;
+          background-color: #000000;
+          overflow: hidden;
+          box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5), 0 0 30px rgba(0, 51, 255, 0.1);
+          position: relative;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .phone-notch {
+          width: 120px;
+          height: 20px;
+          background-color: #222222;
+          border-bottom-left-radius: 12px;
+          border-bottom-right-radius: 12px;
+          position: absolute;
+          top: 0;
+          left: 50%;
+          transform: translateX(-50%);
+          z-index: 10;
+        }
+
+        .phone-content {
+          flex: 1;
+          padding: 24px 16px 16px;
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+          overflow-y: auto;
+          color: #ffffff;
+        }
+
+        .phone-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-top: 8px;
+          padding-bottom: 8px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+          text-align: left;
+        }
+
+        .phone-logo {
+          font-weight: 800;
+          font-size: 0.9rem;
+          letter-spacing: -0.02em;
+        }
+
+        .phone-menu span {
+          height: 2px;
+          background-color: #ffffff;
+          width: 16px;
+          display: block;
+          margin-bottom: 3px;
+        }
+
+        .ad-slot-wrapper {
+          background: rgba(255, 255, 255, 0.03);
+          border: 2px dashed rgba(255, 255, 255, 0.2);
+          border-radius: 12px;
+          height: 180px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          position: relative;
+          overflow: hidden;
+          transition: all 0.4s ease;
+        }
+
+        /* 상태별 보더 라이팅 효과 */
+        .ad-slot-wrapper.bidding {
+          border-color: #0033ff;
+          background: rgba(0, 51, 255, 0.05);
+          box-shadow: 0 0 20px rgba(0, 51, 255, 0.2);
+        }
+
+        .ad-slot-wrapper.active {
+          border-color: #a6f966;
+          background: rgba(166, 249, 102, 0.05);
+          box-shadow: 0 0 20px rgba(166, 249, 102, 0.2);
+        }
+
+        .ad-placeholder {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 8px;
+          color: #888888;
+          text-align: center;
+          font-size: 0.8rem;
+          z-index: 1;
+        }
+
+        .ad-image {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          opacity: 0;
+          transition: opacity 0.5s ease;
+          z-index: 2;
+        }
+
+        .ad-image.show { opacity: 1; }
+
+        .ad-badge {
+          position: absolute;
+          top: 8px;
+          right: 8px;
+          background: rgba(0, 0, 0, 0.7);
+          color: #ffffff;
+          font-size: 0.65rem;
+          padding: 2px 6px;
+          border-radius: 4px;
+          z-index: 3;
+        }
+
+        .ad-winner-tag {
+          position: absolute;
+          bottom: 8px;
+          left: 8px;
+          background: #a6f966;
+          color: #000000;
+          font-weight: 700;
+          font-size: 0.7rem;
+          padding: 4px 8px;
+          border-radius: 6px;
+          box-shadow: 0 2px 10px rgba(166, 249, 102, 0.4);
+          transform: translateY(30px);
+          opacity: 0;
+          transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+          z-index: 4;
+        }
+
+        .ad-winner-tag.show {
+          transform: translateY(0);
+          opacity: 1;
+        }
+
+        .phone-article { display: flex; flex-direction: column; gap: 8px; text-align: left;}
+        .art-tag { font-size: 0.65rem; font-weight: 700; color: #0033ff; }
+        .art-title { font-size: 1rem; font-weight: 700; line-height: 1.3; }
+        .art-body { display: flex; flex-direction: column; gap: 6px; }
+        .art-line { height: 6px; background: rgba(255, 255, 255, 0.1); border-radius: 3px; width: 100%; }
+        .art-line.short { width: 60%; }
+
+        /* [수정] 대시보드 텍스트 정렬이 부모에 의해 센터링되지 않도록 좌측 정렬 고정 */
+        .sim-dashboard.glass-card {
+          background: #ffffff;
+          border: 1px solid #e5e7eb;
+          border-radius: 16px;
+          padding: 32px;
+          display: flex;
+          flex-direction: column;
+          gap: 24px;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+          color: #000000;
+          text-align: left; 
+          transition: all 0.3s ease;
+        }
+
+        .sim-dashboard.glass-card:hover {
+          border-color: #0033ff;
+          box-shadow: 0 15px 40px rgba(0, 51, 255, 0.08);
+          transform: translateY(-4px);
+        }
+
+        .sim-metrics {
+          display: grid;
+          grid-template-columns: 1fr 1fr 1fr;
+          gap: 16px;
+        }
+
+        .metric-box {
+          background: #f9fafb;
+          border: 1px solid #e5e7eb;
+          border-radius: 12px;
+          padding: 18px;
+          text-align: center;
+        }
+
+        .metric-value {
+          font-size: 1.6rem;
+          font-weight: 800;
+          margin-bottom: 4px;
+        }
+
+        .metric-label {
+          font-size: 0.75rem;
+          color: #666666;
+          font-weight: 500;
+        }
+
+        .user-profile-tag {
+          background: #f3f4f6;
+          border: 1px solid #e5e7eb;
+          border-radius: 8px;
+          padding: 12px 16px;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          font-size: 0.8rem;
+          color: #333333;
+        }
+
+        .user-profile-tag strong {
+          color: #0033ff;
+        }
+
+        /* [수정] 프로필 갱신 버튼 스타일 디테일 보완 */
+        .cta-btn-small {
+            background: #ffffff;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .cta-btn-small:hover {
+            background: #0033ff;
+            color: #ffffff;
+            border-color: #0033ff;
+        }
+
+        .sim-network-box {
+          background: #111111;
+          border: 1px solid #222222;
+          border-radius: 16px;
+          height: 240px;
+          position: relative;
+          overflow: hidden;
+        }
+
+        /* [수정] SVG가 부모 박스를 꽉 채우도록 설정하여 라인 정렬 어긋남 해결 */
+        .network-svg {
+          width: 100%;
+          height: 100%;
+          position: absolute;
+          top: 0;
+          left: 0;
+        }
+
+        .network-svg line {
+          stroke: rgba(255, 255, 255, 0.08);
+        }
+
+        .network-svg .connection-line {
+          stroke-dasharray: 6 6;
+          transition: stroke 0.3s;
+        }
+        
+        /* 활성화된 라인 상태 컬러 오버라이드 */
+        .network-svg line.active-blue { stroke: rgba(0, 51, 255, 0.6); stroke-width: 2; }
+        .network-svg line.active-lime { stroke: rgba(166, 249, 102, 0.8); stroke-width: 2; }
+
+        .network-svg .flow-pulse {
+          stroke-width: 3;
+          stroke-linecap: round;
+          stroke-dasharray: 30 120;
+          stroke-dashoffset: 0;
+          display: none; /* 기본적으로 숨김 상태에서 제어 */
+        }
+
+        .network-svg .flow-pulse.active {
+          display: block;
+          animation: flow 1.5s linear infinite;
+        }
+
+        .network-svg .flow-pulse.pulse-blue { stroke: #0033ff; }
+        .network-svg .flow-pulse.pulse-lime { stroke: #a6f966; }
+
+        @keyframes flow {
+          to { stroke-dashoffset: -150; }
+        }
+
+        .net-node {
+          position: absolute;
+          width: 48px;
+          height: 48px;
+          background: #222222;
+          border: 2px solid #444444;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transform: translate(-50%, -50%);
+          color: #888888;
+          font-size: 0.95rem;
+          z-index: 5;
+          transition: all 0.3s ease;
+        }
+
+        .net-node.active {
+          border-color: #0033ff;
+          color: #ffffff;
+          background: #0011aa;
+          box-shadow: 0 0 15px rgba(0, 51, 255, 0.6);
+        }
+
+        .net-node.active.lime {
+          border-color: #a6f966;
+          background: #112200;
+          color: #a6f966;
+          box-shadow: 0 0 15px rgba(166, 249, 102, 0.6);
+        }
+
+        .node-label {
+          position: absolute;
+          bottom: -24px;
+          left: 50%;
+          transform: translateX(-50%);
+          font-size: 0.65rem;
+          white-space: nowrap;
+          font-weight: 700;
+          color: #888888;
+        }
+
+        .net-node.active .node-label {
+          color: #ffffff;
+        }
+
+        /* [수정] 콘솔 텍스트 정렬 수정 */
+        .sim-console {
+          background: #000000;
+          border: 1px solid #222222;
+          border-radius: 12px;
+          height: 180px;
+          padding: 16px;
+          font-family: 'Courier New', Courier, monospace;
+          font-size: 0.8rem;
+          overflow-y: auto;
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          text-align: left;
+        }
+
+        .console-line {
+          line-height: 1.4;
+          padding-left: 8px;
+        }
+
+        .console-line.info { color: #ffffff; } 
+        .console-line.system { color: #5588ff; } 
+        .console-line.bid { color: #888888; } 
+        .console-line.win {
+          color: #a6f966; 
+          font-weight: bold;
+          border-left: 2px solid #a6f966;
+        }
+
+        .sim-btn {
+          width: 100%;
+          background: linear-gradient(135deg, #0033ff, #001188);
+          color: #ffffff;
+          border: none;
+          padding: 18px;
+          border-radius: 12px;
+          font-weight: 800;
+          font-size: 1.1rem;
+          cursor: pointer;
+          box-shadow: 0 4px 20px rgba(0, 51, 255, 0.2);
+          transition: all 0.3s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+        }
+
+        .sim-btn:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 25px rgba(0, 51, 255, 0.4);
+        }
+
+        .sim-btn:disabled {
+          background: #333333 !important;
+          color: #666666 !important;
+          box-shadow: none !important;
+          cursor: not-allowed;
+          transform: none;
+        }
+        .aaa{font-size: 3rem; font-weight: 900; margin-top: 200px; margin-bottom: 200px;}
+	</style>
+</head>
+
+<body>
+
+<a href="../index.html" class="back-btn" title="이전 화면으로">
+    <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M20 11H7.83L13.42 5.41L12 4L4 12L12 20L13.41 18.59L7.83 13H20V11Z"/>
+    </svg>
+</a>
+
+    <section class="section">
+        <h1 class="main-title">아이고!</h1>
+    </section>
+
+    <section class="section">
+        <p class="sub-text-1">방금 당신의 소중한 개인정보가 유출되었습니다.</p>
+    </section>
+
+    <section class="section">
+        <p class="sub-text-2">
+            클릭 한 번으로 웹사이트에 접속해 첫 문장을 읽기까지 걸린 시간은 단 0.1초.<br>
+            이 짧은 찰나, 보이지 않는 곳에서는 당신의 데이터를 상품으로 한 경매가 열렸습니다.
+        </p>
+    </section>
+
+    <section class="section">
+    <div class="rtb-intro-wrap">
+        <h2 class="sub-title">이것을 실시간 경매, <span class="highlight-blue"><br>RTB(Real-Time Bidding)</span>라고 부릅니다.</h2>
+        <p class="desc-text">
+            당신이 웹사이트를 클릭하는 순간, 광고 창 하나를 채우기 위해<br>
+            수백 개의 글로벌 광고 테크 기업들이 당신의 데이터를 두고<br>실시간 초 단위 경매를 벌이는 것이죠.
+        </p>
+    </div>
+</section>
+<section class="section">
+<div class="rtb-section">
+  <h2 class="rtb-main-title">RTB의 3단계</h2>
+  
+  <div class="rtb-container">
+    <div class="rtb-card">
+      <h3 class="rtb-card-title">SSP</h3>
+      <p class="rtb-card-desc">
+        지면을 판매하는 매체와<br>
+        그 지면의 가치를 높여<br>
+        광고를 관리하고 공급하는<br>
+        공급자 플랫폼<br>
+        <span class="sub-text">(Supply Side Platform)</span>
+      </p>
+    </div>
+
+    <div class="rtb-line"></div>
+
+    <div class="rtb-card">
+      <h3 class="rtb-card-title">AD<br>Exchange</h3>
+      <p class="rtb-card-desc">
+        실제 광고 판매자와 구매자가 만나<br>
+        경매를 체결하는 중앙 증권거래소 역할<br>
+        최고가 낙찰을 100ms 내에 완수함
+      </p>
+    </div>
+
+    <div class="rtb-line"></div>
+
+    <div class="rtb-card">
+      <h3 class="rtb-card-title">DSP</h3>
+      <p class="rtb-card-desc">
+        광고주를 대변하여<br>
+        실시간 가치 평가 및<br>
+        최적의 가격 입찰 담당.<br>
+        사용자 특징에 맞는 최상의<br>
+        타겟 지면에 효율적으로<br>
+        낙찰받도록 설계됨
+      </p>
+    </div>
+  </div>
+</div>
+</section>
+
+<section id="simulator" class="section">
+  <div class="container">
+    <h2 class="section-title" style="margin-bottom: 40px;">RTB 시뮬레이션</h2>
+    
+    <div class="sim-container reveal">
+      <div class="device-preview">
+        <div class="phone-frame">
+          <div class="phone-notch"></div>
+          <div class="phone-content">
+            <div class="phone-header">
+              <span class="phone-logo">NEW TECH TODAY</span>
+              <div class="phone-menu">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+            </div>
+            
+            <div class="ad-slot-wrapper" id="adSlot">
+              <span class="ad-badge">ADVERTISEMENT</span>
+              <span class="ad-winner-tag" id="adWinnerTag">WINNER: Nike ($3.45)</span>
+              
+              <div class="ad-placeholder" id="adPlaceholder">
+                <i data-lucide="sparkles" style="width: 28px; height: 28px; color: #0033ff;" class="ad-icon-animation"></i>
+                <p style="font-weight: 600; margin-top: 8px;">실시간 배너 지면</p>
+                <p style="font-size: 0.7rem; max-width: 140px; margin-top: 4px;">시뮬레이션 시작 시 실시간 입찰 결과 광고가 게재됩니다.</p>
+              </div>
+              
+              <img src="" alt="Winning Ad Banner" class="ad-image" id="adImg">
+            </div>
+            
+            <div class="phone-article">
+              <span class="art-tag">AI & TECHNOLOGY</span>
+              <h4 class="art-title">웹 브라우징의 숨겨진 보이지 않는 거래들</h4>
+              <div class="art-body">
+                <div class="art-line"></div>
+                <div class="art-line"></div>
+                <div class="art-line"></div>
+                <div class="art-line short"></div>
+              </div>
+            </div>
+            
+            <div class="phone-article">
+              <span class="art-tag">INSIGHTS</span>
+              <h4 class="art-title">0.1초의 데이터 가치가 창출하는 디지털 비즈니스</h4>
+              <div class="art-body">
+                <div class="art-line"></div>
+                <div class="art-line"></div>
+                <div class="art-line short"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="sim-dashboard glass-card">
+        <div class="sim-metrics">
+          <div class="metric-box">
+            <div class="metric-value gradient-blue" id="metricTimer">000.0ms</div>
+            <div class="metric-label">경매 진행 속도 (제한 100ms)</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-value" style="color: #666666;" id="metricBidders">0</div>
+            <div class="metric-label">총 참여 DSP 입찰자</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-value text-lime" id="metricWinnerPrice">$0.00</div>
+            <div class="metric-label">최종 낙찰 가격 (CPM)</div>
+          </div>
+        </div>
+        
+        <div class="user-profile-tag">
+          <i data-lucide="shield-alert" style="color: #0033ff; width: 16px; height: 16px;"></i>
+          <span>실시간 가상 방문자 프로필: </span>
+          <span id="targetUserProfile">연령대: <strong>20대 후반</strong>, 주사용 기기: <strong>모바일(iOS)</strong>, 관심사: <strong>피트니스/러닝</strong></span>
+          <button class="cta-btn-small" style="margin-left: auto; padding: 4px 10px; font-size: 0.75rem;" id="btnRandomProfile">프로필 갱신</button>
+        </div>
+        
+        <div class="sim-network-box">
+          <svg class="network-svg" id="networkSvg">
+            <line x1="10%" y1="50%" x2="40%" y2="50%" class="connection-line" id="line1" />
+            <line x1="40%" y1="50%" x2="70%" y2="50%" class="connection-line" id="line2" />
+            
+            <line x1="70%" y1="50%" x2="90%" y2="20%" class="connection-line" id="lineDsp1" />
+            <line x1="70%" y1="50%" x2="90%" y2="50%" class="connection-line" id="lineDsp2" />
+            <line x1="70%" y1="50%" x2="90%" y2="80%" class="connection-line" id="lineDsp3" />
+            
+            <line x1="10%" y1="50%" x2="40%" y2="50%" class="flow-pulse pulse-blue" id="pulseUserToSSP" />
+            <line x1="40%" y1="50%" x2="70%" y2="50%" class="flow-pulse pulse-lime" id="pulseSSPToExchange" />
+            <line x1="70%" y1="50%" x2="90%" y2="20%" class="flow-pulse pulse-blue" id="pulseExchangeToDsp1" />
+            <line x1="70%" y1="50%" x2="90%" y2="50%" class="flow-pulse pulse-blue" id="pulseExchangeToDsp2" />
+            <line x1="70%" y1="50%" x2="90%" y2="80%" class="flow-pulse pulse-blue" id="pulseExchangeToDsp3" />
+          </svg>
+          
+          <div class="net-node" style="left: 10%; top: 50%;" id="nodeUser">
+            <i data-lucide="user" style="width: 18px; height: 18px;"></i>
+            <div class="node-label">방문자</div>
+          </div>
+          <div class="net-node" style="left: 40%; top: 50%;" id="nodeSSP">
+            <i data-lucide="cloud-lightning" style="width: 18px; height: 18px;"></i>
+            <div class="node-label">SSP</div>
+          </div>
+          <div class="net-node" style="left: 70%; top: 50%;" id="nodeExchange">
+            <i data-lucide="refresh-cw" style="width: 18px; height: 18px;"></i>
+            <div class="node-label">Ad Exchange</div>
+          </div>
+          
+          <div class="net-node" style="left: 90%; top: 20%;" id="nodeDsp1">
+            <span style="font-size: 0.65rem; font-weight: 800;">DSP 1</span>
+            <div class="node-label" style="bottom: auto; top: -20px;">스포츠웨어</div>
+          </div>
+          <div class="net-node" style="left: 90%; top: 50%;" id="nodeDsp2">
+            <span style="font-size: 0.65rem; font-weight: 800;">DSP 2</span>
+            <div class="node-label">글로벌 테크</div>
+          </div>
+          <div class="net-node" style="left: 90%; top: 80%;" id="nodeDsp3">
+            <span style="font-size: 0.65rem; font-weight: 800;">DSP 3</span>
+            <div class="node-label">식음료</div>
+          </div>
+        </div>
+        
+        <div class="sim-console" id="simConsole">
+          <div class="console-line info">[SYSTEM] 실시간 경매 시뮬레이터 시스템이 정상 로드되었습니다.</div>
+          <div class="console-line info">[SYSTEM] 사용자의 정보를 설정한 후 아래 '입찰 경매 시작' 버튼을 누르십시오.</div>
+        </div>
+        
+        <div class="sim-controls">
+          <button class="sim-btn" id="btnStartSim">
+            <i data-lucide="play-circle" style="width: 24px; height: 24px;"></i>
+            <span>100ms 실시간 입찰 경매 트리거</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  // Lucide 아이콘 초기화 렌더링
+  lucide.createIcons();
+
+  // 가상 프로필 데이터 셋
+  const profiles = [
+    { text: "연령대: <strong>20대 후반</strong>, 주사용 기기: <strong>모바일(iOS)</strong>, 관심사: <strong>피트니스/러닝</strong>", target: "스포츠웨어" },
+    { text: "연령대: <strong>30대 중반</strong>, 주사용 기기: <strong>데스크톱</strong>, 관심사: <strong>글로벌 테크/가전</strong>", target: "글로벌 테크" },
+    { text: "연령대: <strong>10대 후반</strong>, 주사용 기기: <strong>모바일(Android)</strong>, 관심사: <strong>유행 간식/식음료</strong>", target: "식음료" }
+  ];
+
+  // 낙찰 결과 가상 데이터 (Unsplash 무료 범용 이미지 연동)
+  const adResults = {
+    "스포츠웨어": { brand: "Nike Marathon", price: "$4.65", img: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&q=80" },
+    "글로벌 테크": { brand: "Apple Cyber", price: "$5.80", img: "https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?w=400&q=80" },
+    "식음료": { brand: "Monster Drink", price: "$3.15", img: "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=400&q=80" }
+  };
+
+  let currentProfileIndex = 0;
+
+  // DOM 요소 선택
+  const btnStartSim = document.getElementById('btnStartSim');
+  const btnRandomProfile = document.getElementById('btnRandomProfile');
+  const targetUserProfile = document.getElementById('targetUserProfile');
+  const metricTimer = document.getElementById('metricTimer');
+  const metricBidders = document.getElementById('metricBidders');
+  const metricWinnerPrice = document.getElementById('metricWinnerPrice');
+  const simConsole = document.getElementById('simConsole');
+  
+  // 스마트폰 프레임 내부 요소
+  const adSlot = document.getElementById('adSlot');
+  const adPlaceholder = document.getElementById('adPlaceholder');
+  const adImg = document.getElementById('adImg');
+  const adWinnerTag = document.getElementById('adWinnerTag');
+
+  // 네트워크 노드 및 라인 엘리먼트
+  const nodes = {
+    user: document.getElementById('nodeUser'),
+    ssp: document.getElementById('nodeSSP'),
+    exchange: document.getElementById('nodeExchange'),
+    dsp1: document.getElementById('nodeDsp1'),
+    dsp2: document.getElementById('nodeDsp2'),
+    dsp3: document.getElementById('nodeDsp3')
+  };
+
+  const pulses = {
+    userToSsp: document.getElementById('pulseUserToSSP'),
+    sspToExchange: document.getElementById('pulseSSPToExchange'),
+    exchangeToDsp1: document.getElementById('pulseExchangeToDsp1'),
+    exchangeToDsp2: document.getElementById('pulseExchangeToDsp2'),
+    exchangeToDsp3: document.getElementById('pulseExchangeToDsp3')
+  };
+
+  const lines = {
+    l1: document.getElementById('line1'),
+    l2: document.getElementById('line2'),
+    dsp1: document.getElementById('lineDsp1'),
+    dsp2: document.getElementById('lineDsp2'),
+    dsp3: document.getElementById('lineDsp3')
+  };
+
+  // 콘솔 로그 추가 함수
+  function logToConsole(text, type = 'info') {
+    const line = document.createElement('div');
+    line.className = `console-line ${type}`;
+    line.innerText = text;
+    simConsole.appendChild(line);
+    simConsole.scrollTop = simConsole.scrollHeight; // 최신 스크롤 포커싱
+  }
+
+  // 프로필 랜덤 변경 이벤트
+  btnRandomProfile.addEventListener('click', () => {
+    currentProfileIndex = (currentProfileIndex + 1) % profiles.length;
+    targetUserProfile.innerHTML = profiles[currentProfileIndex].text;
+    logToConsole(`[SYSTEM] 방문자 프로필 변동 -> 타겟 핵심 관심사: ${profiles[currentProfileIndex].target}`, 'system');
+  });
+
+  // 100ms 시뮬레이션 메인 트리거 이벤트
+  btnStartSim.addEventListener('click', () => {
+    // 인터랙션 중 버튼 중복 클릭 방지 차단
+    btnStartSim.disabled = true;
+    btnRandomProfile.disabled = true;
+
+    // 1. 상태값 및 이펙트 초기화
+    metricTimer.innerText = "000.0ms";
+    metricBidders.innerText = "0";
+    metricBidders.style.color = "#666666";
+    metricWinnerPrice.innerText = "$0.00";
+    adImg.classList.remove('show');
+    adWinnerTag.classList.remove('show');
+    adSlot.className = "ad-slot-wrapper";
+    adPlaceholder.style.opacity = "1";
+    
+    Object.values(nodes).forEach(n => n.className = "net-node");
+    Object.values(pulses).forEach(p => p.classList.remove('active'));
+    Object.values(lines).forEach(l => l.className = "connection-line");
+
+    simConsole.innerHTML = ""; // 이전 로그 클리어
+    logToConsole("[0.0ms] [TRIGGER] 사용자의 페이지 요청 감지. RTB 경매 시작.", "system");
+
+    // 2. 크로노미터 정밀 타이머 가동 (0 -> 100ms 가상 매칭 카운팅)
+    let startTime = performance.now();
+    let duration = 100; // 타겟 제한 100ms
+    
+    // 시각 보정용 타이머 인터벌
+    const timerInterval = setInterval(() => {
+      let elapsed = performance.now() - startTime;
+      if (elapsed >= duration) {
+        metricTimer.innerText = "100.0ms";
+        clearInterval(timerInterval);
+      } else {
+        metricTimer.innerText = `${elapsed.toFixed(1)}ms`;
+      }
+    }, 10);
+
+    // 3. 시간차 네트워크 여정 시뮬레이션 타임라인 연출
+    
+    // [단계 1] 즉시: 유저 노드 활성화 및 SSP 데이터 스트리밍 고속 충전
+    nodes.user.classList.add('active');
+    pulses.userToSsp.classList.add('active');
+    lines.l1.classList.add('active-blue');
+
+    // [단계 2] 20ms 시점: SSP 도달 및 쿠키 매칭/데이터 토큰 변환
+    setTimeout(() => {
+      logToConsole("[20.0ms] [SSP] 유저 식별 코드 매칭 완료. 미디어 인벤토리 생성.", "info");
+      nodes.ssp.classList.add('active');
+      pulses.sspToExchange.classList.add('active');
+      lines.l2.classList.add('active-lime');
+      adSlot.classList.add('bidding'); // 스마트폰 내부 슬롯 비딩 대기 연두/블루 플래시
+    }, 20);
+
+    // [단계 3] 50ms 시점: Ad Exchange 도달 및 각 DSP 그룹에 오픈 비드 입찰 요청 일제 살포
+    setTimeout(() => {
+      logToConsole("[50.0ms] [EXCHANGE] 글로벌 실시간 입찰 요청(Bid Request) 퍼블리싱.", "system");
+      nodes.exchange.classList.add('active');
+      metricBidders.innerText = "3";
+      metricBidders.style.color = "#0033ff";
+      
+      pulses.exchangeToDsp1.classList.add('active');
+      pulses.exchangeToDsp2.classList.add('active');
+      pulses.exchangeToDsp3.classList.add('active');
+      lines.dsp1.classList.add('active-blue');
+      lines.dsp2.classList.add('active-blue');
+      lines.dsp3.classList.add('active-blue');
+    }, 50);
+
+    // [단계 4] 75ms 시점: 수백만 대 알고리즘 연산 수행 후 DSP 가격 제출 비딩 로그 출력
+    setTimeout(() => {
+      logToConsole("[75.0ms] [DSP 1] 스포츠웨어 브랜드 -> 입찰가 $4.65 계산 제출", "bid");
+      logToConsole("[82.0ms] [DSP 2] 글로벌 IT 테크 -> 입찰가 $5.80 계산 제출", "bid");
+      logToConsole("[88.0ms] [DSP 3] 식음료 가공 유통 -> 입찰가 $3.15 계산 제출", "bid");
+      
+      nodes.dsp1.classList.add('active');
+      nodes.dsp2.classList.add('active');
+      nodes.dsp3.classList.add('active');
+    }, 75);
+
+    // [단계 5] 100ms 정각: 경매 마감 및 최고가 입찰 낙찰자 선정, 레이아웃 업데이트 완결
+    setTimeout(() => {
+      const currentTarget = profiles[currentProfileIndex].target;
+      const winnerData = adResults[currentTarget];
+      
+      logToConsole(`[100.0ms] [WINNER] 최고가 입찰 달성! 최종 낙찰사: ${winnerData.brand} (${winnerData.price})`, "win");
+      
+      // 낙찰된 노드에 연두색 성공 하이라이트 부여
+      if(currentTarget === "스포츠웨어") { nodes.dsp1.classList.add('lime'); lines.dsp1.className = "connection-line active-lime"; }
+      if(currentTarget === "글로벌 테크") { nodes.dsp2.classList.add('lime'); lines.dsp2.className = "connection-line active-lime"; }
+      if(currentTarget === "식음료") { nodes.dsp3.classList.add('lime'); lines.dsp3.className = "connection-line active-lime"; }
+
+      // 메트릭 및 대시보드 스위칭 고정
+      metricWinnerPrice.innerText = winnerData.price;
+      
+      // 디바이스 프레임 배너 렌더링 스위칭 스크립트 트리거
+      adImg.src = winnerData.img;
+      adImg.classList.add('show');
+      adWinnerTag.innerText = `WINNER: ${winnerData.brand} (${winnerData.price})`;
+      adWinnerTag.classList.add('show');
+      adSlot.className = "ad-slot-wrapper active";
+      adPlaceholder.style.opacity = "0";
+
+      // 버튼 잠금 해제 복구
+      btnStartSim.disabled = false;
+      btnRandomProfile.disabled = false;
+    }, 100);
+
+  });
+</script>
+
+
+
+<section class="aaa">
+디자인과 정렬 등은 진행하지 않고 내용 구성만 해보았습니다<br>
+다음주에 더 해올게요ㅠㅠ
+
+</section>
+</body>
+</html>
